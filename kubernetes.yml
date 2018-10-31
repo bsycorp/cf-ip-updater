@@ -1,0 +1,50 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cf-ip-updater
+spec:
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  # Run at 10AM (AEST) or 11AM (AEDT). The scheduler time is in UTC.
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          annotations:
+            iam.amazonaws.com/role: cluster-k8s-cf-ip-updater
+        spec:
+          containers:
+          - name: cf-ip-updater
+            image: bsycorp/cf-ip-updater:latest
+            env:
+            - name: AWS_REGION
+              value: ap-southeast-2
+            - name: TF_VAR_resource_prefix
+              value: my-cluster
+            - name: TF_VAR_vpc_id
+              value: vpc-1234
+            - name: TF_VAR_sg_id_0
+              value: sg-0000000
+            - name: TF_VAR_sg_id_1
+              value: sg-1111111
+            - name: TF_VAR_sg_id_2
+              value: sg-2222222
+            imagePullPolicy: Always
+            resources:
+              limits:
+                cpu: 200m
+                memory: 256Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            volumeMounts:
+              - mountPath: /etc/ssl/certs/
+                name: certs
+          restartPolicy: OnFailure
+          volumes:
+          - name: certs
+            hostPath:
+              path: /etc/ssl/certs/

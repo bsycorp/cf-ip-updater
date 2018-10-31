@@ -1,0 +1,8 @@
+sudo: required
+services: docker
+language: minimal
+
+script:
+  - docker login -u $DOCKERUSER -p $DOCKERPASS
+  - docker build -t "bsycorp/cf-ip-updater:latest" .
+  - docker push bsycorp/cf-ip-updater
